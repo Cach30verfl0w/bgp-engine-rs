@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+pub mod open;
+
 use crate::error::Error;
 use nom::{
     IResult,

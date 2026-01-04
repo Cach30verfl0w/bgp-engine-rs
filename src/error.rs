@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+use std::net::Ipv4Addr;
 use nom::error::{ErrorKind, ParseError};
 use thiserror::Error;
 
@@ -24,21 +24,50 @@ use thiserror::Error;
 /// - [6. BGP Error Handling, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-6)
 #[derive(Error, Debug)]
 pub enum Error {
-    /// Following to section 4.1. of the Border Gateway Protocol RFC, the marker field MUST be set to all ones. When it's not the case, the
+    /// Following to section 4.1 of the Border Gateway Protocol RFC, the marker field MUST be set to all ones. When it's not the case, the
     /// parser returns this error to the caller.
     ///
     /// ## See also
     /// - [4.1. Message Header Format, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-4.1)
     #[error("BGP Error => Message marker specified in header is illegal")]
     BadMessageMarker,
-    
-    /// Following to section 6.1. of the Border Gateway Protocol RFC, the length field has some constrains regarding the length based on the
+
+    /// Following to section 6.1 of the Border Gateway Protocol RFC, the length field has some constrains regarding the length based on the
     /// message type and some general assumptions.
-    /// 
+    ///
     /// ## See also
     /// - [6.1. Message Header Error Handling, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-4.1)
     #[error("BGP Error => Message length exceeds the expected bounds (Expected: {1} < {0} < {2})")]
     BadMessageLength(u16, u16, u16),
+
+    /// Following to section 6.2 of the Border Gateway Protocol RFC, the version field has to match one of the versions supported by the BGP
+    /// engine itself.
+    ///
+    /// ## See also
+    /// - [6.2. Open Message Error Handling, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-6.2)
+    #[error("BGP Error => Unsupported protocol version '{0}', expected 4")]
+    UnsupportedVersion(u8),
+
+    /// Following to section 6.2. of the Border Gateway Protocol RFC, the BGP identifier has to be unicast IPv4 host address. When it's not
+    /// such an address, the address is syntactically invalid.
+    ///
+    /// ## See also
+    /// - [6.2. Open Message Error Handling, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-6.2)
+    #[error("BGP Error => Bad BGP identifier '{0}' has to be a valid unicast IPv4 address")]
+    BadBgpIdentifier(Ipv4Addr),
+
+    /// Following to section 6.2. of the Border Gateway Protocol RFC, the BGP implementation has to send an error to the remote system when
+    /// an optional parameter is malformed. So this error case indicates an unspecific optional parameter error.
+    ///
+    /// ## See also
+    /// - [6.2. Open Message Error Handling, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-6.2)
+    #[error("BGP Error => Malformed optional parameters")]
+    MalformedOptionalParameter,
+
+    /// This indicates the specified length for the open parameters are invalid and there are remaining bytes after parsing all bytes from
+    /// the optional parameters slice. It's a special case of the [Error::MalformedOptionalParameter] error.
+    #[error("BGP Error => Length for open parameters is illegal ({0} bytes are remaining)")]
+    ParameterLength(u8),
 
     #[error("Parse Error => Error while parsing ({0:?})")]
     Nom(ErrorKind)
