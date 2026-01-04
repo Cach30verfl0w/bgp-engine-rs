@@ -4,3 +4,7 @@ description = "Modern BGP parser and engine written in the Rust programming lang
 authors = ["Cedric Hammes <contact@cach30verfl0w.net>"]
 version = "0.0.1"
 edition = "2024"
+
+[dependencies]
+thiserror = "2.0.17"
+nom = "8.0.0"
