@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+use std::io;
 use std::net::Ipv4Addr;
 use nom::error::{ErrorKind, ParseError};
 use thiserror::Error;
@@ -24,6 +26,20 @@ use thiserror::Error;
 /// - [6. BGP Error Handling, RFC4271: A Border Gateway Protocol 4 (BGP-4)](https://datatracker.ietf.org/doc/html/rfc4271#section-6)
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("Parse Error => Error while parsing ({0:?})")]
+    Nom(ErrorKind),
+    #[error("I/O Error => {0}")]
+    StdIo(io::Error),
+    
+    #[error("IP Error => Expected something like '127.0.0.0/8' or '2001:db8::/32', but got '{0}'")]
+    BadPrefix(String),
+    
+    #[error("IP Error => Expected something like '127.0.0.1' or '2001:db8::', but got '{0}'")]
+    BadAddr(String),
+    
+    #[error("IP Error => Expected something like '23', but got '{0}'")]
+    BadMask(String),
+
     /// Following to section 4.1 of the Border Gateway Protocol RFC, the marker field MUST be set to all ones. When it's not the case, the
     /// parser returns this error to the caller.
     ///
@@ -67,10 +83,7 @@ pub enum Error {
     /// This indicates the specified length for the open parameters are invalid and there are remaining bytes after parsing all bytes from
     /// the optional parameters slice. It's a special case of the [Error::MalformedOptionalParameter] error.
     #[error("BGP Error => Length for open parameters is illegal ({0} bytes are remaining)")]
-    ParameterLength(u8),
-
-    #[error("Parse Error => Error while parsing ({0:?})")]
-    Nom(ErrorKind)
+    ParameterLength(u8)
 }
 
 impl<T> ParseError<T> for Error {

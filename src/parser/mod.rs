@@ -15,6 +15,7 @@
  */
 
 pub mod open;
+pub mod update;
 
 use crate::error::Error;
 use nom::{
